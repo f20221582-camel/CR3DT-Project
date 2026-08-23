@@ -1,21 +1,41 @@
-# Camera-Radar 3D Tracking (CR3DT) Net
+# Camera-RADAR 3D Detection and Tracking (CR3DT)
 
-## Overview
-CR3DTNet is a deep learning architecture for 3D Object Detection designed to effectively fuse multimodal sensor data, specifically images (Camera) and Radar point clouds. By leveraging intermediate and late fusion techniques, the model provides robust perception capabilities in Bird's Eye View (BEV).
+## 📌 Abstract & Overview
+This repository contains the core architectural implementation and findings for an enhanced **Camera-RADAR 3D Detection and Tracking (CR3DT)** framework. 
 
-## Architecture Details
-The model architecture extends the `CenterPoint` detector and integrates custom modules for sensor fusion:
-- **Image & BEV Encoders**: Extracts image features and transforms them into BEV space utilizing a view transformer.
-- **Radar Adapter**: A custom `1x1` convolution-based network that processes raw radar features to reduce noise and extract higher-quality representations before fusion.
-- **Sensor Fusion**:
-  - *Intermediate Fusion*: Implements stacking of camera, LiDAR (optional), and cleaned radar features.
-  - *Late Fusion*: Includes a residual connection fusing radar features after the BEV encoder.
-- **BEV Compressor**: Condenses the concatenated multimodal BEV features into a unified representation using convolutional layers and Instance Normalization.
+While LiDAR-based systems currently set the benchmark for 3D perception accuracy in autonomous driving, they remain prohibitively expensive for mass adoption. The CR3DT model offers a cost-effective alternative by fusing semantically rich camera data with velocity-aware, robust automotive RADAR data.
 
-## Frameworks & Dependencies
-- **PyTorch**: Core deep learning framework.
-- **MMDetection3D / MMCV**: Built on top of the OpenMMLab ecosystem for 3D object detection.
+Our work consists of two phases:
+1. **Baseline Reproduction**: Successfully reproduced the official CR3DT baseline on the **nuScenes dataset (300GB)**, achieving an mAP of 35.1% and a NuScenes Detection Score (NDS) of 45.6% at ~11 FPS.
+2. **Novel Enhancements**: Identified that the baseline's "naive concatenation" of Camera and RADAR features is suboptimal due to the "Semantic Gap" and sensor noise. We designed and implemented two novel architectural interventions: **Gated Fusion** and a **Learnable Radar Adapter**.
 
-## Implementation Highlights
-- `sourcecode.py`: Contains the `CR3DTNet` model definition, including the `radar_adapter`, multi-sensor feature extraction logic (`extract_feat`), and the forward pass for training/testing.
-- Integrates gracefully with complex data loaders passing intrinsics, extrinsics, and ego-to-global transformations to align multi-view inputs.
+## 🧠 Architectural Enhancements
+
+### 1. Learnable Radar Adapter
+Directly fusing raw radar point cloud features with highly abstract ResNet camera features wastes network capacity. To solve this, we introduced a lightweight sequential block (1x1 Conv -> BatchNorm -> ReLU) to process and normalize the sparse RADAR data *before* it touches the camera features. 
+
+* **Impact**: Filters noise and aligns the radar features to a compatible latent space, making the downstream fusion significantly more effective.
+* **Code Reference**: See `radar_adapter` in `cr3dt_model.py`.
+
+### 2. Gated Fusion Mechanism
+Simple concatenation treats both sensors as equally valid at all times. In real-world scenarios, radar is often noisy (ghost objects), and cameras can be obstructed (glare/darkness). 
+We implemented a dynamic "Gate Layer" (a Squeeze-and-Excitation style approach) that calculates attention weights to dynamically suppress a sensor if its data is inconsistent.
+
+* **Impact**: Allows the model to intelligently weigh the importance of Camera vs. RADAR features based on the environmental context.
+
+## ⚙️ Model Pipeline (Bird's-Eye-View)
+1. **Camera Stream (LSS)**: 6 surround-view images are processed via ResNet-50. Depth distributions are predicted, lifting the 2D images into a 3D frustum, which is splatted onto a BEV grid.
+2. **Radar Stream (Pillarization)**: Radar sweeps are voxelized and encoded into pillar feature vectors.
+3. **Fusion**: The Radar Adapter cleans the radar features, which are then fused with the Camera BEV features. A BEV Compressor unifies the representation before passing it to the detection head.
+
+## 🚀 Challenges Overcome
+Deploying this complex stack on a 24GB RTX 4090 presented significant challenges:
+* **VRAM Bottlenecks**: Overcame Out-of-Memory (OOM) errors by implementing Automatic Mixed Precision (AMP) training.
+* **RAM Instability**: Fixed "Process Killed" errors by optimizing data loader workers and implementing aggressive pre-fetching limits for the uncompressed 300GB nuScenes dataset.
+
+## 📂 Repository Contents
+* `cr3dt_model.py`: The core PyTorch implementation of our enhanced CR3DTNet architecture, including the custom fusion mechanisms.
+* `CR3DT_Project_Report.pdf`: The full academic report detailing mathematical intuitions, training configurations, and in-depth analysis.
+
+---
+*Developed for Internet of Things (EEE F411).*
