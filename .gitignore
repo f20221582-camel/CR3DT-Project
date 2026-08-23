@@ -1,0 +1,12 @@
+# Ignore large video files (GitHub limits files to 100MB)
+*.mp4
+IOTProjectVideo.mp4
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
