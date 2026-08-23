@@ -1,7 +1,7 @@
 # Camera-RADAR 3D Detection and Tracking (CR3DT)
 
 ## 📌 Abstract & Overview
-This repository contains the core architectural implementation and findings for an enhanced **Camera-RADAR 3D Detection and Tracking (CR3DT)** framework. 
+This repository contains the full codebase, architectural implementation, and findings for an enhanced **Camera-RADAR 3D Detection and Tracking (CR3DT)** framework. 
 
 While LiDAR-based systems currently set the benchmark for 3D perception accuracy in autonomous driving, they remain prohibitively expensive for mass adoption. The CR3DT model offers a cost-effective alternative by fusing semantically rich camera data with velocity-aware, robust automotive RADAR data.
 
@@ -34,7 +34,9 @@ Deploying this complex stack on a 24GB RTX 4090 presented significant challenges
 * **RAM Instability**: Fixed "Process Killed" errors by optimizing data loader workers and implementing aggressive pre-fetching limits for the uncompressed 300GB nuScenes dataset.
 
 ## 📂 Repository Contents
-* `cr3dt_model.py`: The core PyTorch implementation of our enhanced CR3DTNet architecture, including the custom fusion mechanisms.
+* `CR3DT/`: The full autonomous driving training framework (forked from MMDetection3D), containing all core modules, evaluation scripts, and data loaders. Note: Large 300GB datasets and checkpoints have been ignored from git to keep the repository lightweight.
+* `cr3dt_model.py`: The core PyTorch implementation of our enhanced CR3DTNet architecture, showcasing the custom fusion mechanisms directly.
+* `cr3dt-r50.py`: The central configuration script detailing the hyperparameters, model architecture settings, data pipelines, and evaluation metrics for the ResNet-50 backbone.
 * `CR3DT_Project_Report.pdf`: The full academic report detailing mathematical intuitions, training configurations, and in-depth analysis.
 
 ---
